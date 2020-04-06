@@ -82,9 +82,14 @@ var streamServer = http
         request.socket.recording.write(data);
       }
     });
-    request.on("close", function() {
+    request.on("end", function() {
       streamActive = false;
-      console.log("Stream connection closed");
+      console.log(
+        "Stream closed: " +
+          request.socket.remoteAddress +
+          ":" +
+          request.socket.remotePort
+      );
       if (request.socket.recording) {
         request.socket.recording.close();
       }
