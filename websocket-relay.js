@@ -83,6 +83,7 @@ var streamServer = http
       }
     });
     request.on("end", function() {
+      // TODO: Funktioniert nicht bei abruptem Ende, Stromunterbruch oder so…
       streamActive = false;
       console.log(
         "Stream closed: " +
@@ -106,6 +107,7 @@ var streamServer = http
 var apiServer = http
   .createServer(function(request, response) {
     var data = {
+      number: Number(String(API_PORT).slice(-2)),
       stream_active: streamActive,
       client_connections: socketServer.connectionCount
     };
