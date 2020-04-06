@@ -97,7 +97,7 @@ var streamServer = http
 
     // Record the stream to a local file?
     if (RECORD_STREAM) {
-      var path = "recordings/" + STREAM_PORT + "/" + Date.now() + ".ts";
+      var path = "recordings/port-" + STREAM_PORT + "/" + Date.now() + ".ts";
       request.socket.recording = fs.createWriteStream(path);
     }
   })
