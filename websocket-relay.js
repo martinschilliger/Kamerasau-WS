@@ -26,10 +26,10 @@ var streamActive = false;
 // Websocket Server
 var socketServer = new WebSocket.Server({
   port: WEBSOCKET_PORT,
-  perMessageDeflate: false
+  perMessageDeflate: false,
 });
 socketServer.connectionCount = 0;
-socketServer.on("connection", function(socket, upgradeReq) {
+socketServer.on("connection", function (socket, upgradeReq) {
   socketServer.connectionCount++;
   // console.log(
   //   "New WebSocket connection: ",
@@ -37,14 +37,14 @@ socketServer.on("connection", function(socket, upgradeReq) {
   //   (upgradeReq || socket.upgradeReq).headers["user-agent"],
   //   "(" + socketServer.connectionCount + " total)"
   // );
-  socket.on("close", function(code, message) {
+  socket.on("close", function (code, message) {
     socketServer.connectionCount--;
     // console.log(
     //   "Disconnected WebSocket (" + socketServer.connectionCount + " total)"
     // );
   });
 });
-socketServer.broadcast = function(data) {
+socketServer.broadcast = function (data) {
   socketServer.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
@@ -54,7 +54,7 @@ socketServer.broadcast = function(data) {
 
 // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
 var streamServer = http
-  .createServer(function(request, response) {
+  .createServer(function (request, response) {
     var params = request.url.substr(1).split("/");
 
     if (params[0] !== STREAM_SECRET) {
@@ -75,14 +75,14 @@ var streamServer = http
         ":" +
         request.socket.remotePort
     );
-    request.on("data", function(data) {
+    request.on("data", function (data) {
       streamActive = true;
       socketServer.broadcast(data);
       if (request.socket.recording) {
         request.socket.recording.write(data);
       }
     });
-    request.on("end", function() {
+    request.on("end", function () {
       // TODO: Funktioniert nicht bei abruptem Ende, Stromunterbruch oder so…
       streamActive = false;
       console.log(
@@ -105,11 +105,11 @@ var streamServer = http
   .listen(STREAM_PORT);
 
 var apiServer = http
-  .createServer(function(request, response) {
+  .createServer(function (request, response) {
     var data = {
       number: Number(String(API_PORT).slice(-2)),
       stream_active: streamActive,
-      client_connections: socketServer.connectionCount
+      client_connections: socketServer.connectionCount,
     };
     response.statusCode = 200;
     response.setHeader("Content-Type", "application/json");
