@@ -47,7 +47,7 @@ socketServer.on("connection", function (socket) {
 const interval = setInterval(function ping() {
   socketServer.clients.forEach(function each(socket) {
     if (socket.isAlive === false) {
-      socket.terminate();
+      return socket.terminate();
     }
     socket.isAlive = false;
     socket.ping(noop);
