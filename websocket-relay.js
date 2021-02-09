@@ -4,9 +4,9 @@
 // node websocket-relay yoursecret 8081 8082
 // ffmpeg -i <some input> -f mpegts http://localhost:8081/yoursecret
 
-var fs = require("fs"),
-  http = require("http"),
-  WebSocket = require("ws");
+const fs = require("fs");
+const http = require("http");
+const WebSocket = require("ws");
 
 if (process.argv.length < 3) {
   console.log(
@@ -16,34 +16,47 @@ if (process.argv.length < 3) {
   process.exit();
 }
 
-var STREAM_SECRET = process.argv[2],
+const STREAM_SECRET = process.argv[2],
   STREAM_PORT = process.argv[3] || 8081,
   WEBSOCKET_PORT = process.argv[4] || 8082,
   RECORD_STREAM = false,
   API_PORT = process.argv[5] || 8083;
-var streamActive = false;
+let streamActive = false;
 
 // Websocket Server
-var socketServer = new WebSocket.Server({
+let socketServer = new WebSocket.Server({
   port: WEBSOCKET_PORT,
-  perMessageDeflate: false,
+  perMessageDeflate: false
 });
 socketServer.connectionCount = 0;
-socketServer.on("connection", function (socket, upgradeReq) {
+function noop() {}
+function heartbeat() {
+  this.isAlive = true;
+}
+socketServer.on("connection", function (socket) {
   socketServer.connectionCount++;
-  // console.log(
-  //   "New WebSocket connection: ",
-  //   (upgradeReq || socket.upgradeReq).socket.remoteAddress,
-  //   (upgradeReq || socket.upgradeReq).headers["user-agent"],
-  //   "(" + socketServer.connectionCount + " total)"
-  // );
-  socket.on("close", function (code, message) {
+  socket.isAlive = true;
+  socket.on("pong", heartbeat);
+
+  socket.on("close", function () {
     socketServer.connectionCount--;
-    // console.log(
-    //   "Disconnected WebSocket (" + socketServer.connectionCount + " total)"
-    // );
+    socketServer.emit("disconnection", socket);
   });
 });
+
+const interval = setInterval(function ping() {
+  socketServer.clients.forEach(function each(socket) {
+    if (socket.isAlive === false) {
+      socket.terminate();
+    }
+    socket.isAlive = false;
+    socket.ping(noop);
+  });
+}, 5000);
+socketServer.on("close", function close() {
+  clearInterval(interval);
+});
+
 socketServer.broadcast = function (data) {
   socketServer.clients.forEach(function each(client) {
     if (client.readyState === WebSocket.OPEN) {
@@ -52,8 +65,8 @@ socketServer.broadcast = function (data) {
   });
 };
 
-// HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
-var streamServer = http
+// HTTP Server to accept incoming MPEG-TS Stream from ffmpeg
+http
   .createServer(function (request, response) {
     var params = request.url.substr(1).split("/");
 
@@ -104,12 +117,13 @@ var streamServer = http
   })
   .listen(STREAM_PORT);
 
-var apiServer = http
+// api server
+http
   .createServer(function (request, response) {
     var data = {
       number: Number(String(API_PORT).slice(-2)),
       stream_active: streamActive,
-      client_connections: socketServer.connectionCount,
+      client_connections: socketServer.connectionCount
     };
     response.statusCode = 200;
     response.setHeader("Content-Type", "application/json");
