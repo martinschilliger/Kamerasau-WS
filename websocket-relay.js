@@ -81,7 +81,6 @@ http
       response.end();
     }
 
-    response.connection.setTimeout(0);
     console.log(
       "Stream connected: " +
         request.socket.remoteAddress +
@@ -95,11 +94,24 @@ http
         request.socket.recording.write(data);
       }
     });
-    request.on("end", function () {
-      // TODO: Funktioniert nicht bei abruptem Ende, Stromunterbruch oder so…
+
+    // TODO: Funktioniert nicht bei abruptem Ende, Stromunterbruch oder so…
+    request.on("close", function () {
       streamActive = false;
       console.log(
         "Stream closed: " +
+          request.socket.remoteAddress +
+          ":" +
+          request.socket.remotePort
+      );
+      if (request.socket.recording) {
+        request.socket.recording.close();
+      }
+    });
+    request.on("end", function () {
+      streamActive = false;
+      console.log(
+        "Stream ended: " +
           request.socket.remoteAddress +
           ":" +
           request.socket.remotePort
