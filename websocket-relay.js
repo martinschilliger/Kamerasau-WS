@@ -99,10 +99,7 @@ http
     request.on("close", function () {
       streamActive = false;
       console.log(
-        "Stream closed: " +
-          request.socket.remoteAddress +
-          ":" +
-          request.socket.remotePort
+        `Stream closed: ${request.socket.remoteAddress}:${request.socket.remotePort}`
       );
       if (request.socket.recording) {
         request.socket.recording.close();
@@ -111,10 +108,7 @@ http
     request.on("end", function () {
       streamActive = false;
       console.log(
-        "Stream ended: " +
-          request.socket.remoteAddress +
-          ":" +
-          request.socket.remotePort
+        `Stream ended: ${request.socket.remoteAddress}:${request.socket.remotePort}`
       );
       if (request.socket.recording) {
         request.socket.recording.close();
@@ -123,7 +117,7 @@ http
 
     // Record the stream to a local file?
     if (RECORD_STREAM) {
-      var path = "recordings/port-" + STREAM_PORT + "/" + Date.now() + ".ts";
+      let path = "recordings/port-" + STREAM_PORT + "/" + Date.now() + ".ts";
       request.socket.recording = fs.createWriteStream(path);
     }
   })
